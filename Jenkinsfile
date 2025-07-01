@@ -29,6 +29,16 @@ pipeline {
                 // We use 'run' here as well. It starts the necessary dependencies
                 // (like the database), runs the tests in a new container,
                 // and then stops, ensuring a clean environment.
+
+                // --- DIAGNOSTIC STEP ---
+                // First, let's list the files in the /app directory to ensure
+                // the source code is being mounted correctly.
+                echo "Listing files in the test container's /app directory..."
+                sh 'docker-compose run --rm backend ls -la /app'
+
+                // --- ORIGINAL COMMAND ---
+                // Once we confirm the files are present, we will run the tests.
+                echo "Running tests..."
                 sh 'docker-compose run --rm backend poetry run pytest'
             }
         }
