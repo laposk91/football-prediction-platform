@@ -1,41 +1,40 @@
 pipeline {
-    // 1. Agent Configuration
+    // Use the main Jenkins agent. Our custom Docker image has all the tools
+    // (docker, docker-compose) and permissions needed.
     agent any
 
-    // 2. Environment Variables
+    // Environment Variables
     environment {
-        // Use a unique project name to avoid conflicts if you have multiple projects
+        // Use a unique project name to avoid conflicts between concurrent builds.
         COMPOSE_PROJECT_NAME = "fpp_${BUILD_NUMBER}"
     }
 
-    // 3. Pipeline Stages
+    // Pipeline Stages
     stages {
         stage('Lint Code') {
             steps {
-                sh 'docker run --rm -v $(pwd)/backend:/app -w /app python:3.10-slim sh -c "pip install flake8 && flake8 ."'
+                sh 'docker-compose run --rm backend flake8 .'
             }
         }
 
         stage('Build Services') {
             steps {
-                sh 'docker-compose build --no-cache'
+                sh 'docker-compose build'
             }
         }
 
         stage('Run Tests') {
             steps {
-                // Run docker-compose in detached mode
                 sh 'docker-compose up -d'
-                // Execute pytest inside the running backend container
                 sh 'docker-compose exec -T backend poetry run pytest'
             }
         }
     }
 
-    // 4. Post-build Actions
+    // Post-build Actions
     post {
+        // Always clean up containers and networks.
         always {
-            // Clean up the containers and networks created by docker-compose
             sh "docker-compose down"
             echo 'Pipeline finished.'
         }
