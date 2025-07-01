@@ -13,6 +13,7 @@ pipeline {
     stages {
         stage('Lint Code') {
             steps {
+                // This 'run' command works well for one-off tasks.
                 sh 'docker-compose run --rm backend flake8 .'
             }
         }
@@ -25,15 +26,18 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                sh 'docker-compose up -d'
-                sh 'docker-compose exec -T backend poetry run pytest'
+                // We use 'run' here as well. It starts the necessary dependencies
+                // (like the database), runs the tests in a new container,
+                // and then stops, ensuring a clean environment.
+                sh 'docker-compose run --rm backend poetry run pytest'
             }
         }
     }
 
     // Post-build Actions
     post {
-        // Always clean up containers and networks.
+        // This block will now clean up any services that were started
+        // as dependencies for the test run (e.g., the database).
         always {
             sh "docker-compose down"
             echo 'Pipeline finished.'
