@@ -26,28 +26,32 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                // Best Practice: For CI, we rely on the code baked into the Docker
-                // image, not on live volume mounts. We will temporarily disable the
-                // volume mount in docker-compose.yml to ensure a clean test run.
-                echo "Temporarily disabling source code volume mount for CI..."
-                sh "sed -i 's|- ./backend:/app:z|-# ./backend:/app:z|' docker-compose.yml"
-                
+                // Best Practice: For CI, create an override file to disable
+                // development-only configurations like volume mounts.
+                // An empty 'volumes' list here overrides the one in the main file.
+                writeFile file: 'docker-compose.ci.yml', text: '''
+services:
+  backend:
+    volumes: []
+'''
                 echo "Waiting for services to start..."
                 sh "sleep 10"
 
-                // This command now runs tests against the code baked into the image.
+                // Run docker-compose using both the base file and the CI override file.
+                // This ensures tests run against the code baked into the image.
                 echo "Running tests..."
-                sh 'docker-compose run --rm backend poetry run pytest'
+                sh 'docker-compose -f docker-compose.yml -f docker-compose.ci.yml run --rm backend poetry run pytest'
             }
         }
     }
 
     // Post-build Actions
     post {
-        // This block will now clean up any services that were started
-        // as dependencies for the test run (e.g., the database).
+        // Always clean up containers and networks.
+        // We must also use the override file here to ensure the correct
+        // set of containers is targeted for cleanup.
         always {
-            sh "docker-compose down"
+            sh "docker-compose -f docker-compose.yml -f docker-compose.ci.yml down"
             echo 'Pipeline finished.'
         }
     }
