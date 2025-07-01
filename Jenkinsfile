@@ -26,12 +26,16 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                // Best Practice: Add a delay to allow services like the database
-                // to fully initialize before running tests.
+                // Best Practice: For CI, we rely on the code baked into the Docker
+                // image, not on live volume mounts. We will temporarily disable the
+                // volume mount in docker-compose.yml to ensure a clean test run.
+                echo "Temporarily disabling source code volume mount for CI..."
+                sh "sed -i 's|- ./backend:/app:z|-# ./backend:/app:z|' docker-compose.yml"
+                
                 echo "Waiting for services to start..."
                 sh "sleep 10"
 
-                // This command runs tests in a clean, ephemeral container.
+                // This command now runs tests against the code baked into the image.
                 echo "Running tests..."
                 sh 'docker-compose run --rm backend poetry run pytest'
             }
