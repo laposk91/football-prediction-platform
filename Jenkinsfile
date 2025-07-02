@@ -3,19 +3,18 @@ pipeline {
 
     environment {
         COMPOSE_PROJECT_NAME = "fpp_${BUILD_NUMBER}"
-        
     }
 
     stages {
-        // Add this stage to checkout the code from your Git repository
         stage('Checkout Code') {
             steps {
                 checkout scm
             }
         }
-
-	stage('Prepare Environment') {
+        
+        stage('Prepare Environment') {
             steps {
+                // Correctly replace the placeholder AND save to a new file
                 sh 'sed "s|BACKEND_PATH_PLACEHOLDER|${WORKSPACE}/backend|g" docker-compose.yml > docker-compose.ci.yml'
             }
         }
@@ -28,21 +27,23 @@ pipeline {
 
         stage('Build Services') {
             steps {
-                sh 'docker-compose -f docker-compose.yml build --no-cache'
+                // Use the new docker-compose.ci.yml file
+                sh 'docker-compose -f docker-compose.ci.yml build --no-cache'
             }
         }
 
         stage('Run Tests') {
             steps {
+                // Use the new docker-compose.ci.yml file
                 sh 'docker-compose -f docker-compose.ci.yml up -d'
-		sh 'docker-compose -f docker-compose.yml exec -T backend ls -la /app'
-                sh 'docker-compose -f docker-compose.ci.yml exec -T --workdir /app  backend poetry run pytest'
+                sh 'docker-compose -f docker-compose.ci.yml exec -T --workdir /app backend poetry run pytest'
             }
         }
     }
 
     post {
         always {
+            // Use the new docker-compose.ci.yml file
             sh "docker-compose -f docker-compose.ci.yml down"
             echo 'Pipeline finished.'
         }
