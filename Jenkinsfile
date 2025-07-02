@@ -15,7 +15,7 @@ pipeline {
         stage('Prepare Environment') {
             steps {
                 // Correctly replace the placeholder AND save to a new file
-                sh 'sed "s|BACKEND_PATH_PLACEHOLDER|${WORKSPACE}/backend|g" docker-compose.yml > docker-compose.ci.yml'
+                sh 'sed "s|BACKEND_PATH_PLACEHOLDER|${WORKSPACE}/backend:z|g" docker-compose.yml > docker-compose.ci.yml'
             }
         }
 
