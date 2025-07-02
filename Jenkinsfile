@@ -28,7 +28,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 sh 'docker-compose -f docker-compose.yml up -d'
-                sh 'docker-compose -f docker-compose.yml exec -T backend poetry run pytest'
+                sh 'docker-compose -f docker-compose.yml exec -T --workdir /app  backend poetry run pytest'
             }
         }
     }
