@@ -1,14 +1,12 @@
-
+version: '3.8'
 
 services:
-  # The FastAPI Backend Application
   backend:
     build: ./backend
-    container_name: backend_service
+    # container_name is removed
     ports:
       - "8000:8000"
-    volumes:
-      - BACKEND_PATH_PLACEHOLDER:/app
+    # The entire 'volumes' section is removed
     environment:
       - DATABASE_URL=postgresql://user:password@db:5432/football_db
       - REDIS_URL=redis://redis_cache:6379
@@ -17,12 +15,9 @@ services:
       - redis_cache
     restart: on-failure
 
-  # PostgreSQL Database
   db:
     image: postgres:14-alpine
-    container_name: postgres_db
-    ports:
-      - "5432:5432" # Expose port for local inspection with a DB tool
+    # container_name is removed
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
@@ -31,12 +26,9 @@ services:
       - POSTGRES_DB=football_db
     restart: on-failure
 
-  # Redis Cache
   redis_cache:
     image: redis:7-alpine
-    container_name: redis_cache
-    ports:
-      - "6379:6379" # Expose port for local inspection
+    # container_name is removed
     restart: on-failure
 
 volumes:

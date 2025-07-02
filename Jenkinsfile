@@ -11,13 +11,6 @@ pipeline {
                 checkout scm
             }
         }
-        
-        stage('Prepare Environment') {
-            steps {
-                // Correctly replace the placeholder AND save to a new file
-                sh 'sed "s|BACKEND_PATH_PLACEHOLDER|${WORKSPACE}/backend:z|g" docker-compose.yml > docker-compose.ci.yml'
-            }
-        }
 
         stage('Lint Code') {
             steps {
@@ -27,24 +20,25 @@ pipeline {
 
         stage('Build Services') {
             steps {
-                // Use the new docker-compose.ci.yml file
-                sh 'docker-compose -f docker-compose.ci.yml build --no-cache'
+                // Use the default docker-compose.yml file
+                sh 'docker-compose build --no-cache'
             }
         }
 
         stage('Run Tests') {
             steps {
-                // Use the new docker-compose.ci.yml file
-                sh 'docker-compose -f docker-compose.ci.yml up -d'
-                sh 'docker-compose -f docker-compose.ci.yml exec -T --workdir /app backend poetry run pytest'
+                // Use the default docker-compose.yml file
+                sh 'docker-compose up -d'
+                // The workdir flag is still correct and necessary
+                sh 'docker-compose exec -T --workdir /app backend poetry run pytest'
             }
         }
     }
 
     post {
         always {
-            // Use the new docker-compose.ci.yml file
-            sh "docker-compose -f docker-compose.ci.yml down"
+            // Use the default docker-compose.yml file
+            sh "docker-compose down"
             echo 'Pipeline finished.'
         }
     }
