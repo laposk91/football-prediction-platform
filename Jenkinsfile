@@ -30,7 +30,7 @@ pipeline {
                 // Use the default docker-compose.yml file
                 sh 'docker-compose up -d'
                 // The workdir flag is still correct and necessary
-                sh 'docker-compose exec -T --workdir /app backend poetry run pytest'
+                sh 'docker-compose exec -T --workdir /app backend poetry run python -m pytest'
             }
         }
     }
