@@ -1,39 +1,30 @@
-pipeline {
-    agent any
-    
-    stages {
-        stage('Environment Check') {
-            steps {
-                sh 'docker --version'
-                sh 'docker-compose --version'
-                sh 'pwd && ls -la'
-            }
-        }
-        
-        stage('Build and Test') {
-            steps {
-                sh 'docker-compose -f docker-compose.yml up --build -d'
-                
-                // Wait for services to be ready
-                sh 'sleep 20'
-                
-                // Run tests
-                sh 'docker-compose -f docker-compose.yml exec -T backend pytest'
-            }
-        }
-    }
-    
-    post {
-        always {
-            // Cleanup
-            sh 'docker-compose -f docker-compose.yml down --volumes'
-            
-            // Clean up dangling images
-            sh 'docker image prune -f'
-        }
-        failure {
-            // Show logs on failure for debugging
-            sh 'docker-compose -f docker-compose.yml logs'
-        }
-    }
-}
+# 1. Create a Docker network for Jenkins to communicate
+docker network create jenkins
+
+# 2. Run a Docker-in-Docker (dind) container
+docker run \
+  --name jenkins-docker \
+  --rm \
+  --detach \
+  --privileged \
+  --network jenkins \
+  --network-alias docker \
+  --env DOCKER_TLS_CERTDIR=/certs \
+  --volume jenkins-docker-certs:/certs/client \
+  --volume jenkins-data:/var/jenkins_home \
+  docker:dind
+
+# 3. Run the Jenkins container
+docker run \
+  --name jenkins-blueocean \
+  --rm \
+  --detach \
+  --network jenkins \
+  --env DOCKER_HOST=tcp://docker:2376 \
+  --env DOCKER_CERT_PATH=/certs/client \
+  --env DOCKER_TLS_VERIFY=1 \
+  --publish 8080:8080 \
+  --publish 50000:50000 \
+  --volume jenkins-data:/var/jenkins_home \
+  --volume "$HOME":/home \
+  jenkinsci/blueocean
