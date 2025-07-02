@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         COMPOSE_PROJECT_NAME = "fpp_${BUILD_NUMBER}"
-        BACKEND_PATH = "${WORKSPACE}/backend"
+        
     }
 
     stages {
@@ -11,6 +11,12 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 checkout scm
+            }
+        }
+
+	stage('Prepare Environment') {
+            steps {
+                sh 'sed "s|BACKEND_PATH_PLACEHOLDER|${WORKSPACE}/backend|g" docker-compose.yml > docker-compose.ci.yml'
             }
         }
 
@@ -28,16 +34,16 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                sh 'docker-compose -f docker-compose.yml up -d'
+                sh 'docker-compose -f docker-compose.ci.yml up -d'
 		sh 'docker-compose -f docker-compose.yml exec -T backend ls -la /app'
-                sh 'docker-compose -f docker-compose.yml exec -T --workdir /app  backend poetry run pytest'
+                sh 'docker-compose -f docker-compose.ci.yml exec -T --workdir /app  backend poetry run pytest'
             }
         }
     }
 
     post {
         always {
-            sh "docker-compose -f docker-compose.yml down"
+            sh "docker-compose -f docker-compose.ci.yml down"
             echo 'Pipeline finished.'
         }
     }
