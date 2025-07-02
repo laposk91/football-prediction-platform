@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         COMPOSE_PROJECT_NAME = "fpp_${BUILD_NUMBER}"
+        BACKEND_PATH = "${WORKSPACE}/backend"
     }
 
     stages {
